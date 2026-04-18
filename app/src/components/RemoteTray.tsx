@@ -82,14 +82,16 @@ export function RemoteTray({ roll, onDismiss }: Props) {
       <div
         style={{
           padding: "4px 8px",
-          fontSize: 11,
-          color: "#ccc",
+          fontSize: 12,
+          fontWeight: 600,
+          color: "#fff",
           background: "#14142a",
           textAlign: "center",
           minHeight: 22,
+          letterSpacing: 0.3,
         }}
       >
-        {totals ?? (roll.roll.hidden ? "Hidden" : "Rolling...")}
+        {totals ?? "Hidden"}
       </div>
     </div>
   );
@@ -97,23 +99,28 @@ export function RemoteTray({ roll, onDismiss }: Props) {
 
 function noop() {}
 
-/** Tiny summary string — we'll replace with a richer chip in the recent-rolls log. */
+/** Footer string: "Trait 7" or "Damage 12". Shows "Trait..." / "Damage..."
+ *  while dice are still tumbling. For trait+wild the best of the two (+mod)
+ *  is what matters to onlookers — the loser doesn't get called out. */
 function computeDisplayTotal(roll: RemoteRoll): string | null {
   if (roll.roll.hidden) return null;
-  if (!roll.finishedRolling) return null;
+
+  const label = roll.roll.mode === "trait" ? "Trait" : "Damage";
+  if (!roll.finishedRolling) return `${label}...`;
 
   const chainSum = (id: string) =>
     (roll.chains[id] ?? []).reduce((a, b) => a + b, 0);
 
   if (roll.roll.mode === "trait") {
     const traitTotal = chainSum("trait") + roll.roll.modifier;
-    if (!roll.roll.wildCard) return `${traitTotal}`;
-    const wildTotal = chainSum("wild") + roll.roll.modifier;
+    const wildTotal = roll.roll.wildCard
+      ? chainSum("wild") + roll.roll.modifier
+      : traitTotal;
     const best = Math.max(traitTotal, wildTotal);
-    return `${best} (T ${traitTotal} / W ${wildTotal})`;
+    return `${label} ${best}`;
   }
 
-  // damage
-  const total = roll.roll.dice.reduce((sum, d) => sum + chainSum(d.id), 0) + roll.roll.modifier;
-  return `${total}`;
+  const total =
+    roll.roll.dice.reduce((sum, d) => sum + chainSum(d.id), 0) + roll.roll.modifier;
+  return `${label} ${total}`;
 }
