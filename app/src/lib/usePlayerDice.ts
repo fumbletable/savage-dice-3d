@@ -62,6 +62,7 @@ export function useRemoteRolls(selfId: string | null | undefined): RemoteRoll[] 
   useEffect(() => {
     if (!OBR.isAvailable) return;
     let mounted = true;
+    let unsub: (() => void) | undefined;
 
     const refresh = (players: Player[]) => {
       if (!mounted) return;
@@ -74,20 +75,22 @@ export function useRemoteRolls(selfId: string | null | undefined): RemoteRoll[] 
       setRolls(next);
     };
 
-    const init = async () => {
+    const setup = async () => {
+      // onChange before ready throws "Unable to send message: not ready".
+      // Wait for ready, then fetch + subscribe.
       if (!OBR.isReady) {
         await new Promise<void>((resolve) => OBR.onReady(() => resolve()));
       }
       if (!mounted) return;
       const players = await OBR.party.getPlayers();
       refresh(players);
+      unsub = OBR.party.onChange(refresh);
     };
-    init();
+    setup();
 
-    const unsub = OBR.party.onChange(refresh);
     return () => {
       mounted = false;
-      unsub();
+      unsub?.();
     };
   }, [selfId]);
 

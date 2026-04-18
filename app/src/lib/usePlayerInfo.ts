@@ -14,29 +14,32 @@ export function usePlayerInfo(): PlayerInfo | null {
   useEffect(() => {
     if (!OBR.isAvailable) return;
     let mounted = true;
+    let unsub: (() => void) | undefined;
 
-    const init = async () => {
+    const setup = async () => {
+      // OBR.player.onChange before ready throws "Unable to send message: not ready".
+      // Do the initial fetch AND the subscribe after onReady resolves.
       if (!OBR.isReady) {
         await new Promise<void>((resolve) => OBR.onReady(() => resolve()));
       }
       if (!mounted) return;
+
       const [name, color] = await Promise.all([
         OBR.player.getName(),
         OBR.player.getColor(),
       ]);
       if (!mounted) return;
       setInfo({ id: OBR.player.id, name, color });
-    };
-    init();
 
-    // Keep info fresh if the player renames or recolours mid-session.
-    const unsub = OBR.player.onChange((player) => {
-      setInfo({ id: player.id, name: player.name, color: player.color });
-    });
+      unsub = OBR.player.onChange((player) => {
+        setInfo({ id: player.id, name: player.name, color: player.color });
+      });
+    };
+    setup();
 
     return () => {
       mounted = false;
-      unsub();
+      unsub?.();
     };
   }, []);
 
