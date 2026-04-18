@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { DiceScene } from "./components/DiceScene";
 import type { SceneDie } from "./components/DiceScene";
 import type { DieType } from "./meshes/DiceMesh";
+import type { DiceStyle } from "./materials/DiceMaterial";
 import { randomThrow } from "./lib/throw";
 import type { ThrowRegion } from "./lib/throw";
 import { VERSION } from "./version";
@@ -10,9 +11,15 @@ const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
 const ACE_DELAY_MS = 450;
 const ACE_JITTER_MS = 250; // stops simultaneous aces from re-throwing in the same frame
 
-const TRAIT_COLOUR = "#d4af37"; // gold
-const WILD_COLOUR = "#c94b4b";  // red
-const DAMAGE_COLOUR = "#c8c8d4"; // pale silver
+// Role → material pack. Sunset is naturally warm-red for SWADE wild die convention.
+const TRAIT_STYLE: DiceStyle = "walnut";
+const WILD_STYLE: DiceStyle = "sunset";
+const DAMAGE_STYLE: DiceStyle = "gemstone";
+
+// Accent colours used in UI chips (not the die surface)
+const TRAIT_COLOUR = "#d4af37";
+const WILD_COLOUR = "#c94b4b";
+const DAMAGE_COLOUR = "#c8c8d4";
 
 type Mode = "trait" | "damage";
 
@@ -29,7 +36,8 @@ function normaliseFaceValue(dieType: DieType, raw: number): number {
 interface DieState {
   id: string;
   dieType: DieType;
-  colour: string;
+  style: DiceStyle;
+  tint?: string;
   region: ThrowRegion;
   chain: number[];
   done: boolean;
@@ -74,7 +82,7 @@ export function DiceApp() {
       plan.push({
         id: "trait",
         dieType: selectedDie,
-        colour: TRAIT_COLOUR,
+        style: TRAIT_STYLE,
         region: wildCard ? "left" : "full",
         chain: [],
         done: false,
@@ -83,7 +91,7 @@ export function DiceApp() {
         plan.push({
           id: "wild",
           dieType: "d6",
-          colour: WILD_COLOUR,
+          style: WILD_STYLE,
           region: "right",
           chain: [],
           done: false,
@@ -94,7 +102,7 @@ export function DiceApp() {
         plan.push({
           id: `dmg-${i}`,
           dieType: die,
-          colour: DAMAGE_COLOUR,
+          style: DAMAGE_STYLE,
           region: i % 2 === 0 ? "left" : "right",
           chain: [],
           done: false,
@@ -152,7 +160,8 @@ export function DiceApp() {
       .map((d) => ({
         id: d.id,
         dieType: d.dieType,
-        colour: d.colour,
+        style: d.style,
+        tint: d.tint,
         throw: throws[d.id],
       }));
   }, [dieStates, throws]);

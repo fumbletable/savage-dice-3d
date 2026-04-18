@@ -5,7 +5,9 @@ import * as THREE from "three";
 import { getValueFromDiceGroup } from "../lib/diceValue";
 import { DiceMesh } from "../meshes/DiceMesh";
 import { DiceCollider } from "../meshes/DiceColliders";
+import { DiceMaterial } from "../materials/DiceMaterial";
 import type { DieType } from "../meshes/DiceMesh";
+import type { DiceStyle } from "../materials/DiceMaterial";
 
 // d4 needs extra patience — tetrahedra balance on edges before settling
 const SETTLE_SPEED: Record<DieType, number> = {
@@ -42,7 +44,8 @@ export interface DieThrow {
 interface Props {
   dieType: DieType;
   dieThrow: DieThrow;
-  color?: string;
+  style: DiceStyle;
+  tint?: string;
   onResult: (value: number) => void;
 }
 
@@ -50,7 +53,7 @@ function magnitude(v: { x: number; y: number; z: number }) {
   return Math.sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
 }
 
-export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: Props) {
+export function PhysicsDie({ dieType, dieThrow, style, tint, onResult }: Props) {
   const rigidBodyRef = useRef<RapierRigidBody>(null);
   const groupRef = useRef<THREE.Group>(null);
   const settledRef = useRef(false);
@@ -159,7 +162,7 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
     >
       <DiceCollider dieType={dieType} />
       <DiceMesh ref={groupRef} dieType={dieType}>
-        <meshStandardMaterial color={color} roughness={0.8} metalness={0.1} />
+        <DiceMaterial style={style} tint={tint} />
       </DiceMesh>
     </RigidBody>
   );

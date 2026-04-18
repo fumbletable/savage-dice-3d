@@ -3,12 +3,14 @@ import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import { PhysicsDie } from "./PhysicsDie";
 import type { DieThrow } from "./PhysicsDie";
 import type { DieType } from "../meshes/DiceMesh";
+import type { DiceStyle } from "../materials/DiceMaterial";
 
 export interface SceneDie {
   id: string;
   dieType: DieType;
   throw: DieThrow;
-  colour: string;
+  style: DiceStyle;
+  tint?: string;
 }
 
 interface Props {
@@ -29,9 +31,10 @@ export function DiceScene({ dice, onResult }: Props) {
       style={{ width: "100%", height: "100%" }}
     >
       <color attach="background" args={["#1e1e38"]} />
-      <ambientLight intensity={0.3} />
+      <ambientLight intensity={0.6} />
       <directionalLight position={[6, 4, 4]} intensity={1.8} castShadow />
-      <directionalLight position={[-4, 3, -2]} intensity={0.5} />
+      <directionalLight position={[-4, 3, -2]} intensity={0.9} color="#ffd8b0" />
+      <directionalLight position={[0, 6, -4]} intensity={0.5} color="#b8c8ff" />
 
       <Physics gravity={[0, -20, 0]}>
         {/* Floor */}
@@ -62,7 +65,8 @@ export function DiceScene({ dice, onResult }: Props) {
             key={d.id}
             dieType={d.dieType}
             dieThrow={d.throw}
-            color={d.colour}
+            style={d.style}
+            tint={d.tint}
             onResult={(value) => onResult(d.id, value)}
           />
         ))}
