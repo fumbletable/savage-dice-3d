@@ -2,6 +2,7 @@ import { useEffect, useMemo } from "react";
 import { DiceScene } from "./DiceScene";
 import type { SceneDie } from "./DiceScene";
 import type { RemoteRoll } from "../lib/usePlayerDice";
+import { theme } from "../lib/theme";
 
 interface Props {
   roll: RemoteRoll;
@@ -46,13 +47,13 @@ export function RemoteTray({ roll, onDismiss }: Props) {
       style={{
         width: 150,
         height: 230,
-        background: "rgba(18, 18, 42, 0.88)",
-        border: `2px solid ${roll.player.color}`,
-        borderRadius: 6,
+        background: "rgba(26, 26, 29, 0.92)",
+        border: `1px solid ${roll.player.color}`,
+        borderRadius: theme.radius,
         overflow: "hidden",
         display: "flex",
         flexDirection: "column",
-        boxShadow: "0 6px 16px rgba(0,0,0,0.5)",
+        boxShadow: `0 6px 16px rgba(0,0,0,0.5), 0 0 0 1px ${theme.surfaceHi}`,
       }}
     >
       {/* Player name bar */}
@@ -60,8 +61,9 @@ export function RemoteTray({ roll, onDismiss }: Props) {
         style={{
           padding: "4px 8px",
           fontSize: 11,
-          fontWeight: 700,
-          color: "#fff",
+          fontWeight: 600,
+          letterSpacing: 0.5,
+          color: theme.text,
           background: roll.player.color,
           textAlign: "center",
           textShadow: "0 1px 2px rgba(0,0,0,0.4)",
@@ -84,8 +86,9 @@ export function RemoteTray({ roll, onDismiss }: Props) {
           padding: "4px 8px",
           fontSize: 12,
           fontWeight: 600,
-          color: "#fff",
-          background: "#14142a",
+          color: theme.text,
+          background: theme.bg,
+          borderTop: `1px solid ${theme.surfaceHi}`,
           textAlign: "center",
           minHeight: 22,
           letterSpacing: 0.3,

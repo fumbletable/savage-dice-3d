@@ -15,6 +15,8 @@ import { DiceRollSync } from "./lib/DiceRollSync";
 import { usePlayerInfo } from "./lib/usePlayerInfo";
 import { useRemoteRolls } from "./lib/usePlayerDice";
 import { RemoteTrays } from "./components/RemoteTrays";
+import { RollLog } from "./components/RollLog";
+import { theme } from "./lib/theme";
 import { VERSION } from "./version";
 
 const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
@@ -28,9 +30,9 @@ const WILD_STYLE: DiceStyle = "sunset";
 const DAMAGE_STYLE: DiceStyle = "walnut";
 
 // Accent colours used in UI chips (not the die surface)
-const TRAIT_COLOUR = "#d4af37";
-const WILD_COLOUR = "#c94b4b";
-const DAMAGE_COLOUR = "#c8c8d4";
+const TRAIT_COLOUR = theme.trait;
+const WILD_COLOUR = theme.wild;
+const DAMAGE_COLOUR = theme.damage;
 
 type Mode = "trait" | "damage";
 
@@ -277,9 +279,10 @@ export function DiceApp() {
       height: "100vh",
       display: "flex",
       flexDirection: "column",
-      background: "#1a1a2e",
-      color: "#fff",
-      fontFamily: "system-ui, sans-serif",
+      background: theme.bg,
+      color: theme.text,
+      fontFamily: "system-ui, -apple-system, sans-serif",
+      fontSize: 14,
     }}>
       {/* Invisible — publishes roll state to OBR player metadata */}
       <DiceRollSync
@@ -299,7 +302,7 @@ export function DiceApp() {
           bottom: 4,
           right: 6,
           fontSize: "9px",
-          color: "#5a5a70",
+          color: theme.textDimmer,
           letterSpacing: 0.3,
           pointerEvents: "none",
           userSelect: "none",
@@ -310,7 +313,7 @@ export function DiceApp() {
       </div>
 
       {/* Mode tabs */}
-      <div style={{ display: "flex", borderTop: "1px solid #2a2a4a" }}>
+      <div style={{ display: "flex", borderTop: `1px solid ${theme.surfaceHi}` }}>
         {(["trait", "damage"] as Mode[]).map((m) => (
           <button
             key={m}
@@ -318,14 +321,14 @@ export function DiceApp() {
             style={{
               flex: 1,
               padding: "8px 0",
-              background: mode === m ? "#1a1a2e" : "#12122a",
-              color: mode === m ? "#e8c84a" : "#888",
+              background: mode === m ? theme.bg : theme.surface,
+              color: mode === m ? theme.primaryHi : theme.textDim,
               border: "none",
-              borderBottom: mode === m ? "2px solid #e8c84a" : "2px solid transparent",
-              fontWeight: 700,
+              borderBottom: mode === m ? `2px solid ${theme.primaryHi}` : "2px solid transparent",
+              fontWeight: 600,
               fontSize: "12px",
               textTransform: "uppercase",
-              letterSpacing: 0.5,
+              letterSpacing: 0.8,
               cursor: "pointer",
             }}
           >
@@ -357,11 +360,11 @@ export function DiceApp() {
               style={{
                 flex: 1,
                 padding: "6px 0",
-                background: isSelected ? "#e8c84a" : "#2a2a4a",
-                color: isSelected ? "#1a1a2e" : "#aaa",
-                border: "none",
-                borderRadius: "4px",
-                fontWeight: 700,
+                background: isSelected ? theme.primary : theme.button,
+                color: isSelected ? theme.text : theme.textMuted,
+                border: `1px solid ${isSelected ? theme.primaryHi : theme.surfaceHi}`,
+                borderRadius: theme.radius,
+                fontWeight: 600,
                 fontSize: "12px",
                 cursor: "pointer",
               }}
@@ -380,6 +383,7 @@ export function DiceApp() {
           gap: "8px",
           padding: "4px 12px 6px",
           fontSize: "12px",
+          color: theme.textMuted,
         }}>
           <label style={{ display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" }}>
             <input
@@ -401,7 +405,7 @@ export function DiceApp() {
           fontSize: "11px",
         }}>
           {damagePool.length === 0 && (
-            <span style={{ color: "#888" }}>Tap a die above to add it to the damage pool</span>
+            <span style={{ color: theme.textDim }}>Tap a die above to add it to the damage pool</span>
           )}
           {damagePool.map((die, idx) => (
             <button
@@ -413,11 +417,11 @@ export function DiceApp() {
               title="Remove"
               style={{
                 padding: "3px 8px",
-                background: "#2a2a4a",
-                color: "#c8c8d4",
-                border: "1px solid #3a3a5a",
-                borderRadius: "999px",
-                fontWeight: 700,
+                background: theme.surface,
+                color: theme.text,
+                border: `1px solid ${theme.surfaceHi}`,
+                borderRadius: 999,
+                fontWeight: 600,
                 fontSize: "11px",
                 cursor: "pointer",
               }}
@@ -431,7 +435,7 @@ export function DiceApp() {
               style={{
                 padding: "3px 8px",
                 background: "transparent",
-                color: "#888",
+                color: theme.textDim,
                 border: "none",
                 fontSize: "11px",
                 cursor: "pointer",
@@ -450,9 +454,9 @@ export function DiceApp() {
         alignItems: "center",
         gap: "8px",
         padding: "6px 12px",
-        borderTop: "1px solid #2a2a4a",
+        borderTop: `1px solid ${theme.surfaceHi}`,
       }}>
-        <span style={{ fontSize: "11px", color: "#888", textTransform: "uppercase", letterSpacing: 0.5, width: "32px" }}>
+        <span style={{ fontSize: "10px", color: theme.textDim, textTransform: "uppercase", letterSpacing: 0.8, width: "32px", fontWeight: 600 }}>
           Mod
         </span>
         <button onClick={() => setModifier((m) => m - 1)} style={modBtnStyle}>−</button>
@@ -461,7 +465,7 @@ export function DiceApp() {
           textAlign: "center",
           fontSize: "18px",
           fontWeight: 700,
-          color: modifier === 0 ? "#888" : "#e8c84a",
+          color: modifier === 0 ? theme.textDim : theme.primaryHi,
         }}>
           {modifier > 0 ? `+${modifier}` : modifier}
         </div>
@@ -479,7 +483,7 @@ export function DiceApp() {
         display: "flex",
         alignItems: "center",
         gap: "12px",
-        borderTop: "1px solid #2a2a4a",
+        borderTop: `1px solid ${theme.surfaceHi}`,
         minHeight: "62px",
       }}>
         <button
@@ -487,11 +491,11 @@ export function DiceApp() {
           disabled={!canRoll}
           style={{
             padding: "10px 16px",
-            background: canRoll ? "#e8c84a" : "#444",
-            color: canRoll ? "#1a1a2e" : "#aaa",
-            border: "none",
-            borderRadius: "6px",
-            fontWeight: 700,
+            background: canRoll ? theme.primary : theme.button,
+            color: canRoll ? theme.text : theme.textDim,
+            border: `1px solid ${canRoll ? theme.primaryHi : theme.surfaceHi}`,
+            borderRadius: theme.radius,
+            fontWeight: 600,
             fontSize: "13px",
             cursor: canRoll ? "pointer" : "not-allowed",
             whiteSpace: "nowrap",
@@ -533,6 +537,14 @@ export function DiceApp() {
           )}
         </div>
       </div>
+
+      {/* Recent rolls log */}
+      <RollLog
+        currentRoll={currentRoll}
+        myDieStates={dieStates}
+        remoteRolls={remoteRolls}
+        playerInfo={playerInfo}
+      />
     </div>
   );
 }
@@ -540,11 +552,11 @@ export function DiceApp() {
 const modBtnStyle: React.CSSProperties = {
   width: "32px",
   height: "28px",
-  background: "#2a2a4a",
-  color: "#e8c84a",
-  border: "none",
-  borderRadius: "4px",
-  fontWeight: 700,
+  background: theme.button,
+  color: theme.text,
+  border: `1px solid ${theme.surfaceHi}`,
+  borderRadius: theme.radius,
+  fontWeight: 600,
   fontSize: "16px",
   cursor: "pointer",
 };
@@ -574,19 +586,19 @@ function ResultChip({
       flexDirection: "column",
       alignItems: "center",
       lineHeight: 1.1,
-      opacity: highlighted ? 1 : 0.6,
-      border: highlighted ? `2px solid ${colour}` : "2px solid transparent",
-      borderRadius: "6px",
+      opacity: highlighted ? 1 : 0.55,
+      border: highlighted ? `1px solid ${colour}` : `1px solid transparent`,
+      borderRadius: theme.radius,
       padding: "2px 8px",
     }}>
-      <div style={{ fontSize: "10px", color: "#aaa", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <div style={{ fontSize: "10px", color: theme.textDim, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>
         {label}{aced ? " · acing" : ""}
       </div>
       <div style={{ fontSize: "22px", fontWeight: 700, color: colour }}>
         {total}
       </div>
       {(chainText || modText) && (
-        <div style={{ fontSize: "10px", color: "#ccc", marginTop: 1 }}>
+        <div style={{ fontSize: "10px", color: theme.textMuted, marginTop: 1 }}>
           {chainText ?? chain[0] ?? ""}{modText}
         </div>
       )}
@@ -617,17 +629,17 @@ function DamageChip({
       flexDirection: "column",
       alignItems: "flex-start",
       lineHeight: 1.1,
-      border: done ? `2px solid ${DAMAGE_COLOUR}` : "2px solid transparent",
-      borderRadius: "6px",
+      border: done ? `1px solid ${DAMAGE_COLOUR}` : `1px solid transparent`,
+      borderRadius: theme.radius,
       padding: "2px 8px",
     }}>
-      <div style={{ fontSize: "10px", color: "#aaa", textTransform: "uppercase", letterSpacing: 0.5 }}>
+      <div style={{ fontSize: "10px", color: theme.textDim, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 600 }}>
         Damage{anyAcing ? " · acing" : ""}
       </div>
       <div style={{ fontSize: "22px", fontWeight: 700, color: DAMAGE_COLOUR }}>
         {total}
       </div>
-      <div style={{ fontSize: "10px", color: "#ccc", marginTop: 1 }}>
+      <div style={{ fontSize: "10px", color: theme.textMuted, marginTop: 1 }}>
         {breakdown}{modText}
       </div>
     </div>

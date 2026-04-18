@@ -47,7 +47,7 @@ export function DiceScene({ dice, onResult }: Props) {
       shadows
       style={{ width: "100%", height: "100%" }}
     >
-      <color attach="background" args={["#1e1e38"]} />
+      <color attach="background" args={["#1a1a1d"]} />
       <ambientLight intensity={0.6} />
       <directionalLight position={[6, 4, 4]} intensity={1.8} castShadow />
       <directionalLight position={[-4, 3, -2]} intensity={0.9} color="#ffd8b0" />
@@ -64,7 +64,7 @@ export function DiceScene({ dice, onResult }: Props) {
         <RigidBody type="fixed" friction={0.7} restitution={0.1}>
           <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
             <planeGeometry args={[W * 2, D * 2]} />
-            <meshStandardMaterial color="#1e1e38" roughness={0.95} />
+            <meshStandardMaterial color="#1a1a1d" roughness={0.95} />
           </mesh>
         </RigidBody>
 
