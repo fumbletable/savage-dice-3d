@@ -24,7 +24,8 @@ export function RemoteTray({ roll, onDismiss }: Props) {
         id: d.id,
         dieType: d.type,
         style: d.style,
-        tint: roll.player.color,
+        // No tint — the coloured border + name bar already show whose roll this is.
+        // Tinting muddied the baked-albedo textures.
         throw: roll.throws[d.id],
       }));
   }, [roll]);
