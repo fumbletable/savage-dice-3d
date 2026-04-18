@@ -19,13 +19,59 @@ import sunsetAlbedo from "./sunset/albedo.jpg";
 import sunsetNormal from "./sunset/normal.jpg";
 import sunsetOrm from "./sunset/orm.jpg";
 
-export type DiceStyle = "walnut" | "iron" | "gemstone" | "sunset";
+import galaxyAlbedo from "./galaxy/albedo.jpg";
+import galaxyNormal from "./galaxy/normal.jpg";
+import galaxyOrm from "./galaxy/orm.jpg";
+
+import nebulaAlbedo from "./nebula/albedo.jpg";
+import nebulaNormal from "./nebula/normal.jpg";
+import nebulaOrm from "./nebula/orm.jpg";
+
+import sunriseAlbedo from "./sunrise/albedo.jpg";
+import sunriseNormal from "./sunrise/normal.jpg";
+import sunriseOrm from "./sunrise/orm.jpg";
+
+export type DiceStyle =
+  | "walnut"
+  | "iron"
+  | "gemstone"
+  | "sunset"
+  | "galaxy"
+  | "nebula"
+  | "sunrise";
+
+/** All packs, in dropdown order — alphabetical is cleanest for now.
+ *  Note: `glass` exists in owlbear-rodeo/dice but uses a transparency mask
+ *  instead of ORM; would need special shader handling so we skip it for now. */
+export const DICE_STYLES: DiceStyle[] = [
+  "galaxy",
+  "gemstone",
+  "iron",
+  "nebula",
+  "sunrise",
+  "sunset",
+  "walnut",
+];
+
+/** Friendly labels for the settings dropdown. */
+export const DICE_STYLE_LABELS: Record<DiceStyle, string> = {
+  galaxy: "Galaxy",
+  gemstone: "Gemstone",
+  iron: "Iron",
+  nebula: "Nebula",
+  sunrise: "Sunrise",
+  sunset: "Sunset",
+  walnut: "Walnut",
+};
 
 const MAPS: Record<DiceStyle, { albedo: string; normal: string; orm: string }> = {
   walnut: { albedo: walnutAlbedo, normal: walnutNormal, orm: walnutOrm },
   iron: { albedo: ironAlbedo, normal: ironNormal, orm: ironOrm },
   gemstone: { albedo: gemstoneAlbedo, normal: gemstoneNormal, orm: gemstoneOrm },
   sunset: { albedo: sunsetAlbedo, normal: sunsetNormal, orm: sunsetOrm },
+  galaxy: { albedo: galaxyAlbedo, normal: galaxyNormal, orm: galaxyOrm },
+  nebula: { albedo: nebulaAlbedo, normal: nebulaNormal, orm: nebulaOrm },
+  sunrise: { albedo: sunriseAlbedo, normal: sunriseNormal, orm: sunriseOrm },
 };
 
 interface Props {

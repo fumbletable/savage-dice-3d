@@ -14,8 +14,10 @@ import type {
 import { DiceRollSync } from "./lib/DiceRollSync";
 import { usePlayerInfo } from "./lib/usePlayerInfo";
 import { useRemoteRolls } from "./lib/usePlayerDice";
+import { usePackPreferences } from "./lib/usePackPreferences";
 import { RemoteTrays } from "./components/RemoteTrays";
 import { RollLog } from "./components/RollLog";
+import { SettingsPanel } from "./components/SettingsPanel";
 import { theme } from "./lib/theme";
 import { VERSION } from "./version";
 
@@ -23,18 +25,12 @@ const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
 const ACE_DELAY_MS = 450;
 const ACE_JITTER_MS = 250; // stops simultaneous aces from re-throwing in the same frame
 
-// Role → material pack. Trait + damage share a pack so normal rolls feel like
-// one set of dice. Only the wild die stands apart, as SWADE convention wants.
-const TRAIT_STYLE: DiceStyle = "walnut";
-const WILD_STYLE: DiceStyle = "sunset";
-const DAMAGE_STYLE: DiceStyle = "walnut";
-
 // Accent colours used in UI chips (not the die surface)
 const TRAIT_COLOUR = theme.trait;
 const WILD_COLOUR = theme.wild;
 const DAMAGE_COLOUR = theme.damage;
 
-type Mode = "trait" | "damage";
+type Mode = "trait" | "damage" | "settings";
 
 function sidesOf(die: DieType): number {
   return Number(die.slice(1));
@@ -87,6 +83,9 @@ export function DiceApp() {
   // Other players' active rolls. Empty outside OBR.
   const remoteRolls = useRemoteRolls(playerInfo?.id);
 
+  // Dice pack preferences — persisted to localStorage.
+  const { prefs: packs, setMain: setMainPack, setWild: setWildPack } = usePackPreferences();
+
   const aceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const clearAceTimers = useCallback(() => {
     Object.values(aceTimersRef.current).forEach(clearTimeout);
@@ -110,7 +109,7 @@ export function DiceApp() {
       plan.push({
         id: "trait",
         dieType: selectedDie,
-        style: TRAIT_STYLE,
+        style: packs.main,
         region: wildCard ? "left" : "full",
         role: "trait",
         chain: [],
@@ -120,19 +119,19 @@ export function DiceApp() {
         plan.push({
           id: "wild",
           dieType: "d6",
-          style: WILD_STYLE,
+          style: packs.wild,
           region: "right",
           role: "wild",
           chain: [],
           done: false,
         });
       }
-    } else {
+    } else if (mode === "damage") {
       damagePool.forEach((die, i) => {
         plan.push({
           id: `dmg-${i}`,
           dieType: die,
-          style: DAMAGE_STYLE,
+          style: packs.main,
           region: i % 2 === 0 ? "left" : "right",
           role: "damage",
           chain: [],
@@ -142,6 +141,9 @@ export function DiceApp() {
     }
 
     if (plan.length === 0) return;
+    // Narrow — the only way we've populated `plan` is via trait or damage
+    // branches; settings mode produces an empty plan and early-returns above.
+    if (mode === "settings") return;
 
     const nextStates: Record<string, DieState> = {};
     const nextThrows: Record<string, SceneDie["throw"]> = {};
@@ -175,7 +177,7 @@ export function DiceApp() {
       dice: broadcastDice,
       timestamp: Date.now(),
     });
-  }, [mode, selectedDie, wildCard, damagePool, modifier, playerInfo, resetResults]);
+  }, [mode, selectedDie, wildCard, damagePool, modifier, playerInfo, packs, resetResults]);
 
   const handleResult = useCallback((id: string, value: number, transform: DiceTransform) => {
     setTransforms((prev) => ({ ...prev, [id]: transform }));
@@ -314,12 +316,18 @@ export function DiceApp() {
 
       {/* Mode tabs */}
       <div style={{ display: "flex", borderTop: `1px solid ${theme.surfaceHi}` }}>
-        {(["trait", "damage"] as Mode[]).map((m) => (
+        {(["trait", "damage", "settings"] as Mode[]).map((m) => (
           <button
             key={m}
-            onClick={() => { setMode(m); resetResults(); }}
+            onClick={() => {
+              // Only reset in-progress dice when switching between real roll
+              // modes — going to/from settings shouldn't nuke the current tumble.
+              const bothRollModes = m !== "settings" && mode !== "settings";
+              if (bothRollModes && mode !== m) resetResults();
+              setMode(m);
+            }}
             style={{
-              flex: 1,
+              flex: m === "settings" ? 0.6 : 1,
               padding: "8px 0",
               background: mode === m ? theme.bg : theme.surface,
               color: mode === m ? theme.primaryHi : theme.textDim,
@@ -331,12 +339,22 @@ export function DiceApp() {
               letterSpacing: 0.8,
               cursor: "pointer",
             }}
+            title={m === "settings" ? "Dice pack settings" : undefined}
           >
-            {m}
+            {m === "settings" ? "⚙" : m}
           </button>
         ))}
       </div>
 
+      {mode === "settings" ? (
+        <SettingsPanel
+          main={packs.main}
+          wild={packs.wild}
+          onMainChange={setMainPack}
+          onWildChange={setWildPack}
+        />
+      ) : (
+        <>
       {/* Die row — behaviour depends on mode */}
       <div style={{
         display: "flex",
@@ -537,6 +555,8 @@ export function DiceApp() {
           )}
         </div>
       </div>
+        </>
+      )}
 
       {/* Recent rolls log */}
       <RollLog
