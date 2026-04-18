@@ -17,6 +17,7 @@ import d8Glb from "./d8.glb?url";
 import d10Glb from "./d10.glb?url";
 import d12Glb from "./d12.glb?url";
 import { FaceLabel } from "./FaceLabel";
+import { D4FaceLabels } from "./D4FaceLabels";
 
 export type DieType = "d4" | "d6" | "d8" | "d10" | "d12";
 
@@ -29,18 +30,13 @@ export const D4Mesh = React.forwardRef<THREE.Group, React.JSX.IntrinsicElements[
         <group name="dice">
           <mesh name="d4" castShadow receiveShadow geometry={nodes.d4.geometry}>
             {children}
-            <group name="004_locator_1" position={[0, -0.61, -1.27]} rotation={[-1.92, 0, 0]}>
-              <FaceLabel value="1" size={0.7} />
-            </group>
-            <group name="004_locator_2" position={[-1.1, -0.61, 0.63]} rotation={[-1.39, -0.3, 2.12]}>
-              <FaceLabel value="2" size={0.7} />
-            </group>
-            <group name="004_locator_3" position={[1.1, -0.61, 0.63]} rotation={[-1.39, 0.3, -2.12]}>
-              <FaceLabel value="3" size={0.7} />
-            </group>
-            <group name="004_locator_4" position={[0, 1.18, 0]}>
-              <FaceLabel value="4" size={0.7} />
-            </group>
+            {/* Locators carry no per-face label — value detection only. D4FaceLabels
+                renders the 12 vertex-labels (old-school D&D d4 convention). */}
+            <group name="004_locator_1" position={[0, -0.61, -1.27]} rotation={[-1.92, 0, 0]} />
+            <group name="004_locator_2" position={[-1.1, -0.61, 0.63]} rotation={[-1.39, -0.3, 2.12]} />
+            <group name="004_locator_3" position={[1.1, -0.61, 0.63]} rotation={[-1.39, 0.3, -2.12]} />
+            <group name="004_locator_4" position={[0, 1.18, 0]} />
+            <D4FaceLabels />
           </mesh>
         </group>
       </group>
