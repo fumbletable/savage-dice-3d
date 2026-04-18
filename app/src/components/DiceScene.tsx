@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import { PhysicsDie } from "./PhysicsDie";
@@ -23,7 +24,23 @@ const D = 3.2; // half-depth (Z)
 const T = 0.5; // wall thickness (enough to catch fast dice)
 const H = 5;   // wall half-height
 
+// Pause physics for one RAF after a new roll starts so every RigidBody is
+// instantiated before the sim advances a step. Without this, the order dice
+// mount leaks into the simulation and clients diverge by a frame.
+// Keyed on the concatenated die ids — new set of dice = fresh pause cycle.
+function useRollPause(dice: SceneDie[]) {
+  const [paused, setPaused] = useState(true);
+  const key = dice.map((d) => d.id).join("|");
+  useEffect(() => {
+    setPaused(true);
+    const raf = requestAnimationFrame(() => setPaused(false));
+    return () => cancelAnimationFrame(raf);
+  }, [key]);
+  return paused;
+}
+
 export function DiceScene({ dice, onResult }: Props) {
+  const paused = useRollPause(dice);
   return (
     <Canvas
       camera={{ position: [0, 9, 1.5], fov: 38 }}
@@ -36,7 +53,13 @@ export function DiceScene({ dice, onResult }: Props) {
       <directionalLight position={[-4, 3, -2]} intensity={0.9} color="#ffd8b0" />
       <directionalLight position={[0, 6, -4]} intensity={0.5} color="#b8c8ff" />
 
-      <Physics gravity={[0, -20, 0]}>
+      <Physics
+        gravity={[0, -20, 0]}
+        interpolate={false}
+        timeStep={1 / 120}
+        updateLoop="independent"
+        paused={paused}
+      >
         {/* Floor */}
         <RigidBody type="fixed" friction={0.7} restitution={0.1}>
           <mesh receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
