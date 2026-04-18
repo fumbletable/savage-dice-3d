@@ -20,6 +20,12 @@ function sidesOf(die: DieType): number {
   return Number(die.slice(1));
 }
 
+// SWADE: a d10 face reading "0" counts as 10 (ace value).
+function normaliseFaceValue(dieType: DieType, raw: number): number {
+  if (dieType === "d10" && raw === 0) return 10;
+  return raw;
+}
+
 interface DieState {
   id: string;
   dieType: DieType;
@@ -113,8 +119,9 @@ export function DiceApp() {
     setDieStates((prev) => {
       const die = prev[id];
       if (!die) return prev;
-      const newChain = [...die.chain, value];
-      const isAce = value === sidesOf(die.dieType);
+      const normalised = normaliseFaceValue(die.dieType, value);
+      const newChain = [...die.chain, normalised];
+      const isAce = normalised === sidesOf(die.dieType);
       const updated: DieState = { ...die, chain: newChain, done: !isAce };
 
       if (isAce) {
