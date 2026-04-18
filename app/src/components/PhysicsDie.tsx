@@ -58,6 +58,15 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
   const slowSinceRef = useRef<number | null>(null);
   const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Stash the latest onResult in a ref so `settle` never changes identity.
+  // Parents often pass fresh arrow functions each render; without this, the
+  // throw-applying useEffect would refire every frame and teleport the die
+  // back to its spawn point mid-roll.
+  const onResultRef = useRef(onResult);
+  useEffect(() => {
+    onResultRef.current = onResult;
+  });
+
   const settle = useCallback(() => {
     const rb = rigidBodyRef.current;
     const group = groupRef.current;
@@ -68,8 +77,8 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
     rb.setLinvel({ x: 0, y: 0, z: 0 }, false);
     settledRef.current = true;
     resultSentRef.current = true;
-    onResult(getValueFromDiceGroup(group));
-  }, [onResult]);
+    onResultRef.current(getValueFromDiceGroup(group));
+  }, []);
 
   // Apply throw on mount AND whenever dieThrow changes (ace re-throws).
   // This re-fires the same rigid body imperatively rather than remounting it —
@@ -118,7 +127,7 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
     return () => {
       if (maxTimeoutRef.current) clearTimeout(maxTimeoutRef.current);
     };
-  }, [dieThrow, settle]);
+  }, [dieThrow, settle]); // settle is now stable (empty deps); only dieThrow drives re-fire
 
   useFrame(() => {
     const rb = rigidBodyRef.current;
