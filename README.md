@@ -98,11 +98,11 @@ Pushes to `main` auto-deploy to GitHub Pages in ~30 seconds.
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+GPL-3.0 — see [LICENSE](LICENSE).
 
-Dice materials and GLB meshes derived from [owlbear-rodeo/dice](https://github.com/owlbear-rodeo/dice), which is GPL-3.0. Those asset folders carry the GPL-3.0 terms; the rest of the code is MIT.
+This project incorporates substantial material from [owlbear-rodeo/dice](https://github.com/owlbear-rodeo/dice) (GPL-3.0) including dice GLB meshes, PBR texture packs, convex hull collider geometry, and architectural patterns for roll broadcast. Under GPL-3.0's copyleft terms, the combined work is itself GPL-3.0. If you fork or modify, keep it free and share-alike.
 
 ## Credits
 
-- Dice meshes + PBR textures: [owlbear-rodeo/dice](https://github.com/owlbear-rodeo/dice) (GPL-3.0) by Owlbear Rodeo
+- Dice GLB meshes + PBR texture packs + collider geometry: [owlbear-rodeo/dice](https://github.com/owlbear-rodeo/dice) (GPL-3.0) by Owlbear Rodeo
 - Built by [Fumble Table](https://fumbletable.com)
