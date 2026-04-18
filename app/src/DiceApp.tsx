@@ -14,6 +14,7 @@ import type {
 import { DiceRollSync } from "./lib/DiceRollSync";
 import { usePlayerInfo } from "./lib/usePlayerInfo";
 import { useRemoteRolls } from "./lib/usePlayerDice";
+import { RemoteTrays } from "./components/RemoteTrays";
 import { VERSION } from "./version";
 
 const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
@@ -175,11 +176,6 @@ export function DiceApp() {
   }, [mode, selectedDie, wildCard, damagePool, modifier, playerInfo, resetResults]);
 
   const handleResult = useCallback((id: string, value: number, transform: DiceTransform) => {
-    // Remote dice (IDs like "playerId/dieId") are simulated locally for visual
-    // smoothness, but the roller is authoritative — we don't record their
-    // values or transforms. Guard keeps broadcast payload clean.
-    if (id.includes("/")) return;
-
     setTransforms((prev) => ({ ...prev, [id]: transform }));
     setDieStates((prev) => {
       const die = prev[id];
@@ -210,8 +206,10 @@ export function DiceApp() {
 
   useEffect(() => () => clearAceTimers(), [clearAceTimers]);
 
-  // Build the SceneDie array for my own dice
-  const mySceneDice: SceneDie[] = useMemo(() => {
+  // My own dice in the main tray. Remote players get their own mini-trays
+  // via <RemoteTrays/> so concurrent rolls don't collide in the physics sim
+  // or pile up visually when I switch modes.
+  const sceneDice: SceneDie[] = useMemo(() => {
     return Object.values(dieStates)
       .filter((d) => throws[d.id])
       .map((d) => ({
@@ -222,34 +220,6 @@ export function DiceApp() {
         throw: throws[d.id],
       }));
   }, [dieStates, throws]);
-
-  // Remote players' dice. IDs namespaced as "<playerId>/<dieId>" so they can't
-  // collide with local IDs ("trait", "wild", "dmg-0"). PhysicsDie on the
-  // receiver side imperatively re-fires when the roller publishes a new throw
-  // (ace re-rolls), because useEffect deps on the full dieThrow object.
-  const remoteSceneDice: SceneDie[] = useMemo(() => {
-    const out: SceneDie[] = [];
-    for (const r of remoteRolls) {
-      for (const die of r.roll.dice) {
-        const thr = r.throws[die.id];
-        if (!thr) continue;
-        out.push({
-          id: `${r.player.id}/${die.id}`,
-          dieType: die.type,
-          style: die.style,
-          // Faint tint using the player's OBR colour — cheap GM differentiation.
-          tint: r.player.color,
-          throw: thr,
-        });
-      }
-    }
-    return out;
-  }, [remoteRolls]);
-
-  const sceneDice: SceneDie[] = useMemo(
-    () => [...mySceneDice, ...remoteSceneDice],
-    [mySceneDice, remoteSceneDice],
-  );
 
   // Chains + done flags, derived from dieStates, for broadcast.
   // Memoised so DiceRollSync's effect only re-fires when values actually change.
@@ -323,6 +293,7 @@ export function DiceApp() {
       {/* 3D canvas */}
       <div style={{ flex: 1, position: "relative" }}>
         <DiceScene dice={sceneDice} onResult={handleResult} />
+        <RemoteTrays rolls={remoteRolls} />
         <div style={{
           position: "absolute",
           bottom: 4,
@@ -332,6 +303,7 @@ export function DiceApp() {
           letterSpacing: 0.3,
           pointerEvents: "none",
           userSelect: "none",
+          zIndex: 20,
         }}>
           v{VERSION}
         </div>
