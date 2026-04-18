@@ -55,6 +55,10 @@ export function PhysicsDie({ dieType, dieThrow, style, tint, onResult }: Props) 
   const resultSentRef = useRef(false);
   const slowSinceRef = useRef<number | null>(null);
   const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Last-applied throw serialised — stops redundant re-fires when a new
+  // dieThrow OBJECT arrives with identical values (e.g. when a remote roll's
+  // metadata updates after settle and useRemoteRolls produces fresh refs).
+  const lastThrowKeyRef = useRef<string>("");
 
   // Stash the latest onResult in a ref so `settle` never changes identity.
   // Parents often pass fresh arrow functions each render; without this, the
@@ -91,6 +95,13 @@ export function PhysicsDie({ dieType, dieThrow, style, tint, onResult }: Props) 
   useEffect(() => {
     const rb = rigidBodyRef.current;
     if (!rb) return;
+
+    // Remote rolls re-publish metadata after each die settles, producing a
+    // fresh dieThrow object with the SAME values. Without this guard the
+    // receiver's dice teleport back to spawn and re-roll 2-3 times per roll.
+    const throwKey = JSON.stringify(dieThrow);
+    if (throwKey === lastThrowKeyRef.current) return;
+    lastThrowKeyRef.current = throwKey;
 
     // Re-enable motion (settle locked it if we just finished a previous throw)
     rb.setEnabledRotations(true, true, true, true);
