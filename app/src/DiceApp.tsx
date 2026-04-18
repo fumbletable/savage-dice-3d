@@ -5,7 +5,14 @@ import type { DieType } from "./meshes/DiceMesh";
 import type { DiceStyle } from "./materials/DiceMaterial";
 import { randomThrow } from "./lib/throw";
 import type { ThrowRegion } from "./lib/throw";
-import type { DiceTransform } from "./lib/types";
+import type {
+  DiceTransform,
+  SavageRoll,
+  SavageDie,
+  DieRole,
+} from "./lib/types";
+import { DiceRollSync } from "./lib/DiceRollSync";
+import { usePlayerInfo } from "./lib/usePlayerInfo";
 import { VERSION } from "./version";
 
 const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
@@ -41,6 +48,7 @@ interface DieState {
   style: DiceStyle;
   tint?: string;
   region: ThrowRegion;
+  role: DieRole;
   chain: number[];
   done: boolean;
 }
@@ -61,11 +69,16 @@ export function DiceApp() {
   // Live roll state — a flat record keyed by die id
   const [dieStates, setDieStates] = useState<Record<string, DieState>>({});
   const [throws, setThrows] = useState<Record<string, SceneDie["throw"]>>({});
-  // Final resting poses. Written on settle. Consumed by sender (step 4) to
-  // ship authoritative transforms so receivers can snap out of physics.
-  // Getter intentionally unbound until step 4 wires up broadcast — noUnusedLocals.
-  const [, setTransforms] = useState<Record<string, DiceTransform>>({});
+  // Final resting poses, written on settle. Published to OBR metadata by the
+  // sender so receivers can snap out of physics when the roll ends.
+  const [transforms, setTransforms] = useState<Record<string, DiceTransform>>({});
   const [rolling, setRolling] = useState(false);
+
+  // Current roll descriptor — becomes the broadcast `roll` object. Null when idle.
+  const [currentRoll, setCurrentRoll] = useState<SavageRoll | null>(null);
+
+  // OBR player identity (null outside OBR — dev mode)
+  const playerInfo = usePlayerInfo();
 
   const aceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
   const clearAceTimers = useCallback(() => {
@@ -78,6 +91,7 @@ export function DiceApp() {
     setDieStates({});
     setThrows({});
     setTransforms({});
+    setCurrentRoll(null);
     setRolling(false);
   }, [clearAceTimers]);
 
@@ -91,6 +105,7 @@ export function DiceApp() {
         dieType: selectedDie,
         style: TRAIT_STYLE,
         region: wildCard ? "left" : "full",
+        role: "trait",
         chain: [],
         done: false,
       });
@@ -100,6 +115,7 @@ export function DiceApp() {
           dieType: "d6",
           style: WILD_STYLE,
           region: "right",
+          role: "wild",
           chain: [],
           done: false,
         });
@@ -111,6 +127,7 @@ export function DiceApp() {
           dieType: die,
           style: DAMAGE_STYLE,
           region: i % 2 === 0 ? "left" : "right",
+          role: "damage",
           chain: [],
           done: false,
         });
@@ -128,7 +145,30 @@ export function DiceApp() {
     setDieStates(nextStates);
     setThrows(nextThrows);
     setRolling(true);
-  }, [mode, selectedDie, wildCard, damagePool, resetResults]);
+
+    // Build the broadcast descriptor. playerInfo is null outside OBR (local dev) —
+    // DiceRollSync short-circuits if OBR isn't available, so placeholder values
+    // here are fine and never actually hit the network.
+    const broadcastDice: SavageDie[] = plan.map((d) => ({
+      id: d.id,
+      type: d.dieType,
+      role: d.role,
+      style: d.style,
+    }));
+    setCurrentRoll({
+      rollId: typeof crypto !== "undefined" && crypto.randomUUID
+        ? crypto.randomUUID()
+        : `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+      playerId: playerInfo?.id ?? "local",
+      playerName: playerInfo?.name ?? "Local",
+      playerColor: playerInfo?.color ?? "#888888",
+      mode,
+      modifier,
+      wildCard,
+      dice: broadcastDice,
+      timestamp: Date.now(),
+    });
+  }, [mode, selectedDie, wildCard, damagePool, modifier, playerInfo, resetResults]);
 
   const handleResult = useCallback((id: string, value: number, transform: DiceTransform) => {
     setTransforms((prev) => ({ ...prev, [id]: transform }));
@@ -173,6 +213,20 @@ export function DiceApp() {
         throw: throws[d.id],
       }));
   }, [dieStates, throws]);
+
+  // Chains + done flags, derived from dieStates, for broadcast.
+  // Memoised so DiceRollSync's effect only re-fires when values actually change.
+  const rollChains = useMemo(() => {
+    const out: Record<string, number[]> = {};
+    for (const [id, d] of Object.entries(dieStates)) out[id] = d.chain;
+    return out;
+  }, [dieStates]);
+
+  const rollDone = useMemo(() => {
+    const out: Record<string, boolean> = {};
+    for (const [id, d] of Object.entries(dieStates)) out[id] = d.done;
+    return out;
+  }, [dieStates]);
 
   // Totals
   const traitState = dieStates["trait"];
@@ -220,6 +274,15 @@ export function DiceApp() {
       color: "#fff",
       fontFamily: "system-ui, sans-serif",
     }}>
+      {/* Invisible — publishes roll state to OBR player metadata */}
+      <DiceRollSync
+        roll={currentRoll}
+        throws={throws}
+        chains={rollChains}
+        done={rollDone}
+        transforms={transforms}
+      />
+
       {/* 3D canvas */}
       <div style={{ flex: 1, position: "relative" }}>
         <DiceScene dice={sceneDice} onResult={handleResult} />
