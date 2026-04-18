@@ -4,10 +4,16 @@ import { PhysicsDie } from "./PhysicsDie";
 import type { DieThrow } from "./PhysicsDie";
 import type { DieType } from "../meshes/DiceMesh";
 
-interface Props {
+export interface SceneDie {
+  id: string;
   dieType: DieType;
-  dieThrow: DieThrow | null;
-  onResult: (value: number) => void;
+  throw: DieThrow;
+  colour: string;
+}
+
+interface Props {
+  dice: SceneDie[];
+  onResult: (id: string, value: number) => void;
 }
 
 const W = 2.0; // half-width (X)
@@ -15,7 +21,7 @@ const D = 3.2; // half-depth (Z)
 const T = 0.5; // wall thickness (enough to catch fast dice)
 const H = 5;   // wall half-height
 
-export function DiceScene({ dieType, dieThrow, onResult }: Props) {
+export function DiceScene({ dice, onResult }: Props) {
   return (
     <Canvas
       camera={{ position: [0, 9, 1.5], fov: 38 }}
@@ -50,14 +56,15 @@ export function DiceScene({ dieType, dieThrow, onResult }: Props) {
           <CuboidCollider args={[W + T, H, T]} position={[0, H, D + T]} />
         </RigidBody>
 
-        {dieThrow && (
+        {dice.map((d) => (
           <PhysicsDie
-            key={JSON.stringify(dieThrow)}
-            dieType={dieType}
-            dieThrow={dieThrow}
-            onResult={onResult}
+            key={`${d.id}-${JSON.stringify(d.throw)}`}
+            dieType={d.dieType}
+            dieThrow={d.throw}
+            color={d.colour}
+            onResult={(value) => onResult(d.id, value)}
           />
-        )}
+        ))}
       </Physics>
     </Canvas>
   );

@@ -6,9 +6,17 @@ function randomRotation(): [number, number, number] {
   return [rand(0, Math.PI * 2), rand(0, Math.PI * 2), rand(0, Math.PI * 2)];
 }
 
-export function randomThrow() {
-  // Start near tray edge, fire hard toward centre with lots of spin
-  const x = rand(-1.6, 1.6);
+export type ThrowRegion = "full" | "left" | "right";
+
+export function randomThrow(region: ThrowRegion = "full") {
+  // Start near tray edge, fire hard toward centre with lots of spin.
+  // Left/right regions keep trait + wild dice from spawning on top of each other.
+  const xRange: [number, number] =
+    region === "left" ? [-1.6, -0.3] :
+    region === "right" ? [0.3, 1.6] :
+    [-1.6, 1.6];
+
+  const x = rand(xRange[0], xRange[1]);
   const z = rand(-2.6, 2.6);
   const len = Math.sqrt(x * x + z * z) || 1;
   const speed = rand(5, 9);
