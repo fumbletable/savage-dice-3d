@@ -57,8 +57,9 @@ export function DiceScene({ dice, onResult }: Props) {
         </RigidBody>
 
         {dice.map((d) => (
+          // Stable key — PhysicsDie applies new throws imperatively, no remount
           <PhysicsDie
-            key={`${d.id}-${JSON.stringify(d.throw)}`}
+            key={d.id}
             dieType={d.dieType}
             dieThrow={d.throw}
             color={d.colour}

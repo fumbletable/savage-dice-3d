@@ -56,6 +56,7 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
   const settledRef = useRef(false);
   const resultSentRef = useRef(false);
   const slowSinceRef = useRef<number | null>(null);
+  const maxTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const settle = useCallback(() => {
     const rb = rigidBodyRef.current;
@@ -69,6 +70,55 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
     resultSentRef.current = true;
     onResult(getValueFromDiceGroup(group));
   }, [onResult]);
+
+  // Apply throw on mount AND whenever dieThrow changes (ace re-throws).
+  // This re-fires the same rigid body imperatively rather than remounting it —
+  // avoids the cost of destroying/rebuilding the Rapier body and collider.
+  useEffect(() => {
+    const rb = rigidBodyRef.current;
+    if (!rb) return;
+
+    // Re-enable motion (settle locked it if we just finished a previous throw)
+    rb.setEnabledRotations(true, true, true, true);
+    rb.setEnabledTranslations(true, true, true, true);
+
+    // Reposition & reorient
+    rb.setTranslation(
+      { x: dieThrow.position[0], y: dieThrow.position[1], z: dieThrow.position[2] },
+      true,
+    );
+    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(
+      dieThrow.rotation[0],
+      dieThrow.rotation[1],
+      dieThrow.rotation[2],
+    ));
+    rb.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+
+    // Kick
+    rb.setLinvel(
+      { x: dieThrow.linearVelocity[0], y: dieThrow.linearVelocity[1], z: dieThrow.linearVelocity[2] },
+      true,
+    );
+    rb.setAngvel(
+      { x: dieThrow.angularVelocity[0], y: dieThrow.angularVelocity[1], z: dieThrow.angularVelocity[2] },
+      true,
+    );
+
+    // Reset settle state so the next landing reports a fresh value
+    settledRef.current = false;
+    resultSentRef.current = false;
+    slowSinceRef.current = null;
+
+    // Reset the max-roll-time safety timeout for this throw
+    if (maxTimeoutRef.current) clearTimeout(maxTimeoutRef.current);
+    maxTimeoutRef.current = setTimeout(() => {
+      if (!settledRef.current) settle();
+    }, MAX_ROLL_TIME);
+
+    return () => {
+      if (maxTimeoutRef.current) clearTimeout(maxTimeoutRef.current);
+    };
+  }, [dieThrow, settle]);
 
   useFrame(() => {
     const rb = rigidBodyRef.current;
@@ -85,13 +135,6 @@ export function PhysicsDie({ dieType, dieThrow, color = "#d4af37", onResult }: P
       slowSinceRef.current = null;
     }
   });
-
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (!settledRef.current) settle();
-    }, MAX_ROLL_TIME);
-    return () => clearTimeout(timeout);
-  }, [settle]);
 
   return (
     <RigidBody

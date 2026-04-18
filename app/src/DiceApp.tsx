@@ -7,6 +7,7 @@ import type { ThrowRegion } from "./lib/throw";
 
 const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
 const ACE_DELAY_MS = 450;
+const ACE_JITTER_MS = 250; // stops simultaneous aces from re-throwing in the same frame
 
 const TRAIT_COLOUR = "#d4af37"; // gold
 const WILD_COLOUR = "#c94b4b";  // red
@@ -116,9 +117,10 @@ export function DiceApp() {
       const updated: DieState = { ...die, chain: newChain, done: !isAce };
 
       if (isAce) {
+        const delay = ACE_DELAY_MS + Math.random() * ACE_JITTER_MS;
         aceTimersRef.current[id] = setTimeout(() => {
           setThrows((t) => ({ ...t, [id]: randomThrow(die.region) }));
-        }, ACE_DELAY_MS);
+        }, delay);
       }
 
       return { ...prev, [id]: updated };
