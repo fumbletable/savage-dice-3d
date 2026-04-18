@@ -21,14 +21,22 @@ export function RemoteTray({ roll, onDismiss }: Props) {
   const sceneDice: SceneDie[] = useMemo(() => {
     return roll.roll.dice
       .filter((d) => roll.throws[d.id])
-      .map((d) => ({
-        id: d.id,
-        dieType: d.type,
-        style: d.style,
-        // No tint — the coloured border + name bar already show whose roll this is.
-        // Tinting muddied the baked-albedo textures.
-        throw: roll.throws[d.id],
-      }));
+      .map((d) => {
+        // If this receiver joined AFTER the roll already settled (common on
+        // the very first remote roll — popover wasn't yet mounted when the
+        // tumble happened), we render statically at the authoritative pose
+        // so the tray isn't blank.
+        const finalPose = roll.done[d.id] ? roll.transforms[d.id] : undefined;
+        return {
+          id: d.id,
+          dieType: d.type,
+          style: d.style,
+          // No tint — the coloured border + name bar already show whose roll this is.
+          // Tinting muddied the baked-albedo textures.
+          throw: roll.throws[d.id],
+          staticTransform: finalPose,
+        };
+      });
   }, [roll]);
 
   // Schedule dismissal once the roll finishes. If a new throw arrives

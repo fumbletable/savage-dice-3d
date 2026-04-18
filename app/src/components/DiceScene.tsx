@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import { PhysicsDie } from "./PhysicsDie";
+import { StaticDie } from "./StaticDie";
 import type { DieType } from "../meshes/DiceMesh";
 import type { DiceStyle } from "../materials/DiceMaterial";
 import type { DiceThrow, DiceTransform } from "../lib/types";
@@ -12,6 +13,10 @@ export interface SceneDie {
   throw: DiceThrow;
   style: DiceStyle;
   tint?: string;
+  /** When present, render the die STATICALLY at this pose with no physics.
+   *  Used by receivers that hydrate a roll after it's already finished —
+   *  no tumble to show, just the final resting pose. */
+  staticTransform?: DiceTransform;
 }
 
 interface Props {
@@ -83,15 +88,28 @@ export function DiceScene({ dice, onResult }: Props) {
         </RigidBody>
 
         {dice.map((d) => (
-          // Stable key — PhysicsDie applies new throws imperatively, no remount
-          <PhysicsDie
-            key={d.id}
-            dieType={d.dieType}
-            dieThrow={d.throw}
-            style={d.style}
-            tint={d.tint}
-            onResult={(value, transform) => onResult(d.id, value, transform)}
-          />
+          // Prefixed keys so React unmounts/remounts when a die switches
+          // between physics and static render paths (e.g. mid-roll ace vs
+          // already-settled history). PhysicsDie-on-PhysicsDie with same
+          // key stays mounted and re-fires imperatively.
+          d.staticTransform ? (
+            <StaticDie
+              key={`static-${d.id}`}
+              dieType={d.dieType}
+              style={d.style}
+              tint={d.tint}
+              transform={d.staticTransform}
+            />
+          ) : (
+            <PhysicsDie
+              key={`live-${d.id}`}
+              dieType={d.dieType}
+              dieThrow={d.throw}
+              style={d.style}
+              tint={d.tint}
+              onResult={(value, transform) => onResult(d.id, value, transform)}
+            />
+          )
         ))}
       </Physics>
     </Canvas>
