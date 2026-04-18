@@ -4,6 +4,7 @@ import type { SceneDie } from "./components/DiceScene";
 import type { DieType } from "./meshes/DiceMesh";
 import { randomThrow } from "./lib/throw";
 import type { ThrowRegion } from "./lib/throw";
+import { VERSION } from "./version";
 
 const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
 const ACE_DELAY_MS = 450;
@@ -198,6 +199,18 @@ export function DiceApp() {
       {/* 3D canvas */}
       <div style={{ flex: 1, position: "relative" }}>
         <DiceScene dice={sceneDice} onResult={handleResult} />
+        <div style={{
+          position: "absolute",
+          bottom: 4,
+          right: 6,
+          fontSize: "9px",
+          color: "#5a5a70",
+          letterSpacing: 0.3,
+          pointerEvents: "none",
+          userSelect: "none",
+        }}>
+          v{VERSION}
+        </div>
       </div>
 
       {/* Mode tabs */}
