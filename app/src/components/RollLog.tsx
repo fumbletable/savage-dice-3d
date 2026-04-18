@@ -80,7 +80,7 @@ export function RollLog({ currentRoll, myDieStates, remoteRolls, playerInfo }: P
   return (
     <div
       style={{
-        height: 140,                 // fixed — reserves room for ~5 rows regardless of content count
+        height: 170,                 // fixed — reserves room for ~5 rows regardless of content count
         overflowY: "auto",
         borderTop: `1px solid ${theme.surfaceHi}`,
         background: theme.surface,
@@ -89,8 +89,8 @@ export function RollLog({ currentRoll, myDieStates, remoteRolls, playerInfo }: P
       {entries.length === 0 ? (
         <div
           style={{
-            padding: "12px 10px",
-            fontSize: 11,
+            padding: "16px 10px",
+            fontSize: 13,
             color: theme.textDimmer,
             textAlign: "center",
             letterSpacing: 0.3,
@@ -112,16 +112,16 @@ function LogRow({ entry }: { entry: Entry }) {
         display: "flex",
         alignItems: "center",
         gap: 8,
-        padding: "4px 10px",
+        padding: "7px 10px",
         borderBottom: `1px solid ${theme.surfaceHi}`,
-        fontSize: 12,
+        fontSize: 14,
         lineHeight: 1.3,
       }}
     >
       <span
         style={{
-          width: 8,
-          height: 8,
+          width: 10,
+          height: 10,
           background: entry.playerColor,
           borderRadius: "50%",
           flexShrink: 0,
@@ -131,7 +131,7 @@ function LogRow({ entry }: { entry: Entry }) {
         {entry.playerName}
       </span>
       <span style={{ color: theme.primaryHi, fontWeight: 600 }}>{entry.label}</span>
-      <span style={{ color: theme.textDim, fontSize: 11, marginLeft: "auto", flexShrink: 0 }}>
+      <span style={{ color: theme.textDim, fontSize: 12, marginLeft: "auto", flexShrink: 0 }}>
         {entry.detail}
       </span>
     </div>
