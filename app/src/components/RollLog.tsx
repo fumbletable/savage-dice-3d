@@ -80,7 +80,7 @@ export function RollLog({ currentRoll, myDieStates, remoteRolls, playerInfo }: P
   return (
     <div
       style={{
-        maxHeight: 110,
+        maxHeight: 140,
         overflowY: "auto",
         borderTop: `1px solid ${theme.surfaceHi}`,
         background: theme.surface,

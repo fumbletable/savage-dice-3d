@@ -1,13 +1,13 @@
 {
   "manifest_version": 1,
   "name": "Savage Dice 3D",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "author": "Fumble Table",
   "icon": "https://fumbletable.github.io/savage-dice-3d/icon.svg",
   "action": {
     "title": "Savage Dice 3D",
     "icon": "https://fumbletable.github.io/savage-dice-3d/icon.svg",
-    "popover": "https://fumbletable.github.io/savage-dice-3d/popover.html?v=0.6.0",
+    "popover": "https://fumbletable.github.io/savage-dice-3d/popover.html?v=0.6.1",
     "height": 720,
     "width": 380
   },
