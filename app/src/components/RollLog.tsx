@@ -80,7 +80,7 @@ export function RollLog({ currentRoll, myDieStates, remoteRolls, playerInfo }: P
   return (
     <div
       style={{
-        maxHeight: 140,
+        height: 140,                 // fixed — reserves room for ~5 rows regardless of content count
         overflowY: "auto",
         borderTop: `1px solid ${theme.surfaceHi}`,
         background: theme.surface,
