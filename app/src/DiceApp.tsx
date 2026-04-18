@@ -11,10 +11,11 @@ const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
 const ACE_DELAY_MS = 450;
 const ACE_JITTER_MS = 250; // stops simultaneous aces from re-throwing in the same frame
 
-// Role → material pack. Sunset is naturally warm-red for SWADE wild die convention.
+// Role → material pack. Trait + damage share a pack so normal rolls feel like
+// one set of dice. Only the wild die stands apart, as SWADE convention wants.
 const TRAIT_STYLE: DiceStyle = "walnut";
 const WILD_STYLE: DiceStyle = "sunset";
-const DAMAGE_STYLE: DiceStyle = "gemstone";
+const DAMAGE_STYLE: DiceStyle = "walnut";
 
 // Accent colours used in UI chips (not the die surface)
 const TRAIT_COLOUR = "#d4af37";
