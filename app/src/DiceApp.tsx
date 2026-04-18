@@ -5,6 +5,7 @@ import type { DieType } from "./meshes/DiceMesh";
 import type { DiceStyle } from "./materials/DiceMaterial";
 import { randomThrow } from "./lib/throw";
 import type { ThrowRegion } from "./lib/throw";
+import type { DiceTransform } from "./lib/types";
 import { VERSION } from "./version";
 
 const DIE_TYPES: DieType[] = ["d4", "d6", "d8", "d10", "d12"];
@@ -60,6 +61,10 @@ export function DiceApp() {
   // Live roll state — a flat record keyed by die id
   const [dieStates, setDieStates] = useState<Record<string, DieState>>({});
   const [throws, setThrows] = useState<Record<string, SceneDie["throw"]>>({});
+  // Final resting poses. Written on settle. Consumed by sender (step 4) to
+  // ship authoritative transforms so receivers can snap out of physics.
+  // Getter intentionally unbound until step 4 wires up broadcast — noUnusedLocals.
+  const [, setTransforms] = useState<Record<string, DiceTransform>>({});
   const [rolling, setRolling] = useState(false);
 
   const aceTimersRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
@@ -72,6 +77,7 @@ export function DiceApp() {
     clearAceTimers();
     setDieStates({});
     setThrows({});
+    setTransforms({});
     setRolling(false);
   }, [clearAceTimers]);
 
@@ -124,7 +130,8 @@ export function DiceApp() {
     setRolling(true);
   }, [mode, selectedDie, wildCard, damagePool, resetResults]);
 
-  const handleResult = useCallback((id: string, value: number) => {
+  const handleResult = useCallback((id: string, value: number, transform: DiceTransform) => {
+    setTransforms((prev) => ({ ...prev, [id]: transform }));
     setDieStates((prev) => {
       const die = prev[id];
       if (!die) return prev;

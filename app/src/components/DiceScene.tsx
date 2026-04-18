@@ -2,21 +2,21 @@ import { useEffect, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Physics, RigidBody, CuboidCollider } from "@react-three/rapier";
 import { PhysicsDie } from "./PhysicsDie";
-import type { DieThrow } from "./PhysicsDie";
 import type { DieType } from "../meshes/DiceMesh";
 import type { DiceStyle } from "../materials/DiceMaterial";
+import type { DiceThrow, DiceTransform } from "../lib/types";
 
 export interface SceneDie {
   id: string;
   dieType: DieType;
-  throw: DieThrow;
+  throw: DiceThrow;
   style: DiceStyle;
   tint?: string;
 }
 
 interface Props {
   dice: SceneDie[];
-  onResult: (id: string, value: number) => void;
+  onResult: (id: string, value: number, transform: DiceTransform) => void;
 }
 
 const W = 2.0; // half-width (X)
@@ -90,7 +90,7 @@ export function DiceScene({ dice, onResult }: Props) {
             dieThrow={d.throw}
             style={d.style}
             tint={d.tint}
-            onResult={(value) => onResult(d.id, value)}
+            onResult={(value, transform) => onResult(d.id, value, transform)}
           />
         ))}
       </Physics>

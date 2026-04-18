@@ -8,6 +8,7 @@ import { DiceCollider } from "../meshes/DiceColliders";
 import { DiceMaterial } from "../materials/DiceMaterial";
 import type { DieType } from "../meshes/DiceMesh";
 import type { DiceStyle } from "../materials/DiceMaterial";
+import type { DiceThrow, DiceTransform } from "../lib/types";
 
 // d4 needs extra patience — tetrahedra balance on edges before settling
 const SETTLE_SPEED: Record<DieType, number> = {
@@ -34,19 +35,13 @@ const MAX_ROLL_TIME = 6000;
 const FRICTION: Record<DieType, number>    = { d4: 0.8, d6: 0.3, d8: 0.3, d10: 0.3, d12: 0.3 };
 const RESTITUTION: Record<DieType, number> = { d4: 0.05, d6: 0.2, d8: 0.2, d10: 0.2, d12: 0.2 };
 
-export interface DieThrow {
-  position: [number, number, number];
-  rotation: [number, number, number];
-  linearVelocity: [number, number, number];
-  angularVelocity: [number, number, number];
-}
-
 interface Props {
   dieType: DieType;
-  dieThrow: DieThrow;
+  dieThrow: DiceThrow;
   style: DiceStyle;
   tint?: string;
-  onResult: (value: number) => void;
+  /** Fires when the die settles. Transform is its final pose — goes to metadata. */
+  onResult: (value: number, transform: DiceTransform) => void;
 }
 
 function magnitude(v: { x: number; y: number; z: number }) {
@@ -80,7 +75,14 @@ export function PhysicsDie({ dieType, dieThrow, style, tint, onResult }: Props) 
     rb.setLinvel({ x: 0, y: 0, z: 0 }, false);
     settledRef.current = true;
     resultSentRef.current = true;
-    onResultRef.current(getValueFromDiceGroup(group));
+    const value = getValueFromDiceGroup(group);
+    const p = rb.translation();
+    const r = rb.rotation();
+    const transform: DiceTransform = {
+      position: { x: p.x, y: p.y, z: p.z },
+      rotation: { x: r.x, y: r.y, z: r.z, w: r.w },
+    };
+    onResultRef.current(value, transform);
   }, []);
 
   // Apply throw on mount AND whenever dieThrow changes (ace re-throws).
@@ -94,27 +96,13 @@ export function PhysicsDie({ dieType, dieThrow, style, tint, onResult }: Props) 
     rb.setEnabledRotations(true, true, true, true);
     rb.setEnabledTranslations(true, true, true, true);
 
-    // Reposition & reorient
-    rb.setTranslation(
-      { x: dieThrow.position[0], y: dieThrow.position[1], z: dieThrow.position[2] },
-      true,
-    );
-    const q = new THREE.Quaternion().setFromEuler(new THREE.Euler(
-      dieThrow.rotation[0],
-      dieThrow.rotation[1],
-      dieThrow.rotation[2],
-    ));
-    rb.setRotation({ x: q.x, y: q.y, z: q.z, w: q.w }, true);
+    // Reposition & reorient (quaternion passes through directly — no Euler detour)
+    rb.setTranslation(dieThrow.position, true);
+    rb.setRotation(dieThrow.rotation, true);
 
     // Kick
-    rb.setLinvel(
-      { x: dieThrow.linearVelocity[0], y: dieThrow.linearVelocity[1], z: dieThrow.linearVelocity[2] },
-      true,
-    );
-    rb.setAngvel(
-      { x: dieThrow.angularVelocity[0], y: dieThrow.angularVelocity[1], z: dieThrow.angularVelocity[2] },
-      true,
-    );
+    rb.setLinvel(dieThrow.linearVelocity, true);
+    rb.setAngvel(dieThrow.angularVelocity, true);
 
     // Reset settle state so the next landing reports a fresh value
     settledRef.current = false;
@@ -148,13 +136,20 @@ export function PhysicsDie({ dieType, dieThrow, style, tint, onResult }: Props) 
     }
   });
 
+  // Initial RigidBody placement — useEffect overrides this on mount, but R3F
+  // wants *something* for first render. Position in the right spot; leave
+  // rotation at default since physics is paused for one RAF (DiceScene) and
+  // useEffect applies the authoritative quaternion before the sim steps.
+  const initialPos: [number, number, number] = [
+    dieThrow.position.x,
+    dieThrow.position.y,
+    dieThrow.position.z,
+  ];
+
   return (
     <RigidBody
       ref={rigidBodyRef}
-      position={dieThrow.position}
-      rotation={dieThrow.rotation}
-      linearVelocity={dieThrow.linearVelocity}
-      angularVelocity={dieThrow.angularVelocity}
+      position={initialPos}
       gravityScale={2}
       friction={FRICTION[dieType]}
       restitution={RESTITUTION[dieType]}
