@@ -14,16 +14,34 @@ interface Props {
 export function RemoteTrays({ rolls }: Props) {
   const [dismissed, setDismissed] = useState<Set<string>>(new Set());
 
-  // Prune dismissed set when remote rolls actually go away (player cleared
-  // their metadata or new rollId arrived). Keeps the set from growing forever.
+  // Two jobs:
+  //  - Prune dismissed entries whose rolls are no longer in flight (player
+  //    cleared metadata or new rollId arrived). Stops the set growing forever.
+  //  - Auto-dismiss all non-latest rolls so an older player's tray doesn't
+  //    resurface when the newer player's tray auto-dismisses after settle.
   useEffect(() => {
     const live = new Set(rolls.map((r) => r.roll.rollId));
+    let latestId = "";
+    let latestTs = -Infinity;
+    for (const r of rolls) {
+      if (r.roll.timestamp > latestTs) {
+        latestTs = r.roll.timestamp;
+        latestId = r.roll.rollId;
+      }
+    }
+
     setDismissed((prev) => {
-      let changed = false;
       const next = new Set<string>();
+      let changed = false;
       for (const id of prev) {
         if (live.has(id)) next.add(id);
         else changed = true;
+      }
+      for (const r of rolls) {
+        if (r.roll.rollId !== latestId && !next.has(r.roll.rollId)) {
+          next.add(r.roll.rollId);
+          changed = true;
+        }
       }
       return changed ? next : prev;
     });
@@ -37,8 +55,17 @@ export function RemoteTrays({ rolls }: Props) {
     });
   }, []);
 
-  const visible = rolls.filter((r) => !dismissed.has(r.roll.rollId));
-  if (visible.length === 0) return null;
+  // With up to 5-player games, stacking mini-trays overflows the popover.
+  // We show only the MOST RECENT remote roll — newer rolls visually replace
+  // older ones. Every roll still lands in the log below, so nothing is lost.
+  const latest = rolls
+    .filter((r) => !dismissed.has(r.roll.rollId))
+    .reduce<typeof rolls[number] | null>(
+      (acc, r) => (acc && acc.roll.timestamp >= r.roll.timestamp ? acc : r),
+      null,
+    );
+
+  if (!latest) return null;
 
   return (
     <div
@@ -46,18 +73,15 @@ export function RemoteTrays({ rolls }: Props) {
         position: "absolute",
         bottom: 8,
         right: 8,
-        display: "flex",
-        flexDirection: "column-reverse", // newest nearest the controls
-        gap: 8,
-        pointerEvents: "none", // let the main tray receive events
+        pointerEvents: "auto",
         zIndex: 10,
       }}
     >
-      {visible.map((roll) => (
-        <div key={roll.roll.rollId} style={{ pointerEvents: "auto" }}>
-          <RemoteTray roll={roll} onDismiss={() => dismiss(roll.roll.rollId)} />
-        </div>
-      ))}
+      <RemoteTray
+        key={latest.roll.rollId}
+        roll={latest}
+        onDismiss={() => dismiss(latest.roll.rollId)}
+      />
     </div>
   );
 }
